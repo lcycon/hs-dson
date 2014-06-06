@@ -16,6 +16,7 @@ data DSON = Str String
            | Nullish
   deriving (Show, Eq)
 
+-- | Parse a DSON string, returning `Nothing` if no valid DSON is found
 parseDson   :: String -> Maybe DSON
 parseDson s = either (\_ -> Nothing) Just result
   where result = parse topLevel "" s
