@@ -1,7 +1,8 @@
 module Data.DSON.Parse(parseDson, DSON(..)) where
 
 import Control.Applicative ((<$>), (<*>))
-import Text.Parsec
+import Control.Monad (liftM)
+import Text.Parsec hiding (Empty)
 import Text.Parsec.String
 import Text.Parsec.Combinator
 import Text.Parsec.Language (javaStyle)
@@ -11,14 +12,14 @@ data DSON = Str String
            | Object [(String, DSON)]
            | Array [DSON]
            | Number Double
-           | NotFalse
-           | NotTrue
-           | Nullish
+           | No
+           | Yes
+           | Empty
   deriving (Show, Eq)
 
 -- | Parse a DSON string, returning `Nothing` if no valid DSON is found
 parseDson   :: String -> Maybe DSON
-parseDson s = either (\_ -> Nothing) Just result
+parseDson s = either (const Nothing) Just result
   where result = parse topLevel "" s
 
 topLevel :: Parser DSON
@@ -29,9 +30,9 @@ valueP =     try strP
          <|> try numberP
          <|> try objectP
          <|> try arrayP
-         <|> try (symbol "notfalse" >> return NotFalse)
-         <|> try (symbol "nottrue" >> return NotTrue)
-         <|> (symbol "nullish" >> return Nullish)
+         <|> try (symbol "yes" >> return Yes)
+         <|> try (symbol "no" >> return No)
+         <|> (symbol "empty" >> return Empty)
 
 objectP :: Parser DSON
 objectP = do symbol "such"
@@ -39,18 +40,24 @@ objectP = do symbol "such"
              symbol "wow"
              return $ Object tups
   where optTuplesP = option [] ((:) <$> tupleP <*> tuplesP)
-        tuplesP = many (symbol "next" >> tupleP)
+        tuplesP = many (separatorP >> tupleP)
         tupleP = do str <- stringLiteral
                     symbol "is"
                     v <- valueP
                     return (str, v)
+        separatorP =     try (symbol "next")
+                     <|> try (symbol ",")
+                     <|> try (symbol ".")
+                     <|> try (symbol "!")
+                     <|> symbol "?"
 
 arrayP :: Parser DSON
 arrayP = do symbol "so"
             vs <- valuesP
             symbol "many"
             return $ Array vs
-  where valuesP = (:) <$> valueP <*> many (symbol "next" >> valueP)
+  where valuesP = (:) <$> valueP <*> many (separatorP >> valueP)
+        separatorP = try (symbol "and") <|> symbol "also"
 
 strP :: Parser DSON
 strP = fmap Str stringLiteral
@@ -59,9 +66,9 @@ numberP :: Parser DSON
 numberP = do factor <- option 1 (char '-' >> return (-1))
              n <- natOrFloat
              ex <- option 1 (veryP >> integer)
-             return $ Number ((factor * n) ** (fromInteger ex))
+             return $ Number ((factor * n) ** fromInteger ex)
   where veryP = try (symbol "very") <|> symbol "VERY"
-        natOrFloat = naturalOrFloat >>= return . either fromInteger id
+        natOrFloat = liftM (either fromInteger id) naturalOrFloat
 
 lexer = P.makeTokenParser javaStyle
 
