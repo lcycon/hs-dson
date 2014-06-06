@@ -2,7 +2,7 @@
 -- see http://haskell.org/cabal/users-guide/
 
 name:                dson
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            Haskell DogeScript Object Notation Parser
 -- description:         
 homepage:            https://github.com/lcycon/hs-dson

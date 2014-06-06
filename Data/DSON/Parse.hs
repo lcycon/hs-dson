@@ -1,4 +1,4 @@
-module Data.DSON.Parse where
+module Data.DSON.Parse(parseDson, DSON(..)) where
 
 import Control.Applicative ((<$>), (<*>))
 import Text.Parsec
