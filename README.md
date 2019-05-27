@@ -1,6 +1,6 @@
 # hs-dson
 
-Gotta parse me some DogeScript Object Notation
+Gotta parse me some Doge Serialized Object Notation
 
 ## Installing
 
