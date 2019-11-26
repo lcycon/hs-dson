@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 name=$(cabal info . | grep library | awk '{print $2;}')
 echo $name
 plain_name="${name%-*}"
